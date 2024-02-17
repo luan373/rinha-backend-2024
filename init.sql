@@ -27,6 +27,9 @@ CREATE UNLOGGED TABLE IF NOT EXISTS saldos (
 		FOREIGN KEY (cliente_id) REFERENCES clientes(id)
 );
 
+CREATE INDEX idx_transacoes_cliente_id ON transacoes (cliente_id);
+CREATE INDEX idx_transacoes_criado_em ON transacoes (realizada_em);
+
 DO $$
 BEGIN
 	INSERT INTO clientes (nome, limite)

@@ -1,15 +1,17 @@
 package br.com.rinha.data.dao;
 
-import java.sql.*;
-import java.text.MessageFormat;
-
-import br.com.rinha.data.config.DBCPDataSource;
+import br.com.rinha.data.config.HirakiCPDataSource;
+import br.com.rinha.data.model.Saldo;
 import br.com.rinha.data.model.TipoTransacao;
 import br.com.rinha.data.model.Transacao;
 import br.com.rinha.data.stored.ClienteStored;
-import br.com.rinha.data.model.Saldo;
 import br.com.rinha.rest.exceptions.SaldoException;
 import br.com.rinha.rest.payload.TransacaoPayload;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class SaldoDao {
 
@@ -29,7 +31,7 @@ public class SaldoDao {
 
 		var c = new Saldo();
 		try {
-			conn = DBCPDataSource.getConnection();
+			conn = HirakiCPDataSource.getConnection();
 			conn.setAutoCommit(false);
 			conn.beginRequest();
 
@@ -80,7 +82,7 @@ public class SaldoDao {
 		PreparedStatement stmt = null;
 
 		try {
-			conn = DBCPDataSource.getConnection();
+			conn = HirakiCPDataSource.getConnection();
 			conn.setAutoCommit(false);
 			conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 			conn.beginRequest();
@@ -115,7 +117,7 @@ public class SaldoDao {
 		ResultSet rset = null;
 
 		try {
-			conn = DBCPDataSource.getConnection();
+			conn = HirakiCPDataSource.getConnection();
 			conn.beginRequest();
 			conn.setAutoCommit(false);
 			conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);

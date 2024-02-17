@@ -1,10 +1,13 @@
 package br.com.rinha;
 
+import br.com.rinha.data.config.HirakiCPDataSource;
 import br.com.rinha.rest.payload.TransacaoPayload;
 import br.com.rinha.rest.service.TransacaoService;
 import io.javalin.Javalin;
 import io.javalin.http.NotFoundResponse;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -26,7 +29,6 @@ public class Main {
                 throw new NotFoundResponse();
             }
 
-            System.out.println("Bateu aqui: " + LocalDateTime.now());
             ctx.json(transacaoService.gerarExtrato(Integer.parseInt(ctx.pathParam("id"))));
         });
 
@@ -58,7 +60,7 @@ public class Main {
             catch (NotFoundResponse e) {
                 throw new NotFoundResponse();
             } catch (Exception e) {
-                throw new Exception(e);
+                throw new Exception();
             }
         });
 
@@ -67,6 +69,7 @@ public class Main {
         });
 
         app.exception(Exception.class, (e, ctx) -> {
+            System.err.println(e.getMessage());
             ctx.result(e.getMessage());
             ctx.status(422);
         });

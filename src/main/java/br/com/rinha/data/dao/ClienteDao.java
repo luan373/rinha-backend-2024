@@ -1,6 +1,6 @@
 package br.com.rinha.data.dao;
 
-import br.com.rinha.data.config.DBCPDataSource;
+import br.com.rinha.data.config.HirakiCPDataSource;
 import br.com.rinha.data.model.Cliente;
 
 import java.sql.Connection;
@@ -20,7 +20,7 @@ public class ClienteDao {
         
         var c = new Cliente();
 		try {
-			conn = DBCPDataSource.getConnection();
+			conn = HirakiCPDataSource.getConnection();
 			stmt = conn.createStatement();
 			rset = stmt.executeQuery(MessageFormat.format(BUSCAR_CLIENTE_POR_ID, idCliente));
 

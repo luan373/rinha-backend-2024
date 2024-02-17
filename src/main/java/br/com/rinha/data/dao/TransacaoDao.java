@@ -1,19 +1,17 @@
 package br.com.rinha.data.dao;
 
+import br.com.rinha.data.config.HirakiCPDataSource;
+import br.com.rinha.data.model.TipoTransacao;
+import br.com.rinha.data.model.Transacao;
+import br.com.rinha.data.stored.ClienteStored;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
-import br.com.rinha.data.config.DBCPDataSource;
-import br.com.rinha.data.stored.ClienteStored;
-import br.com.rinha.data.model.TipoTransacao;
-import br.com.rinha.data.model.Transacao;
 
 public class TransacaoDao {
 
@@ -36,7 +34,7 @@ public class TransacaoDao {
 
 		List<Transacao> list = new ArrayList<>();
 		try {
-			conn = DBCPDataSource.getConnection();
+			conn = HirakiCPDataSource.getConnection();
 			conn.setAutoCommit(false);
 			conn.beginRequest();
 
@@ -87,7 +85,7 @@ public class TransacaoDao {
 		PreparedStatement stmt = null;
 
 		try {
-			conn = DBCPDataSource.getConnection();
+			conn = HirakiCPDataSource.getConnection();
 			conn.setAutoCommit(false);
 			conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 			conn.beginRequest();

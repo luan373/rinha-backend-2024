@@ -13,8 +13,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.55"
-          memory: "200MB"
+          cpus: "0.50"
+          memory: "180MB"
 
   api02:
     <<: *api
@@ -45,15 +45,15 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=rinha
     ports:
-      - "5433:5433"
+      - "5433:5432"
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     command: postgres -c checkpoint_timeout=600 -c max_wal_size=4096 -c synchronous_commit=0 -c full_page_writes=0
     deploy:
       resources:
         limits:
-          cpus: "0.25"
-          memory: "140MB"
+          cpus: "0.35"
+          memory: "180MB"
 
 networks:
   default:

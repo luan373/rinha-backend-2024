@@ -24,14 +24,6 @@ public class TransacaoService {
 	public static int count = 1;
 	
 	public TransacaoResponse insereTransacao(TransacaoPayload transacaoPayload, int clienteId) throws SQLException, SaldoException {
-//		if(clienteId == 1) {
-//			System.out.println("#########ENTRADA#############");
-//			System.out.println(LocalDateTime.now());
-//			System.out.println(transacaoPayload);
-//			System.out.println(count++);
-//			System.out.println("#########SAIDA#############");
-//		}
-
 		Saldo saldo = saldoDao.buscarSaldoPorClienteId(clienteId);
 
 		int valor = Integer.parseInt(transacaoPayload.getValor());
@@ -49,23 +41,10 @@ public class TransacaoService {
 				throw new IllegalArgumentException("Unexpected value: " + transacaoPayload.getTipo());
 		}
 
-		if(clienteId == 1) {
-			System.out.println("#########ENTRADA#############");
-			System.out.println(LocalDateTime.now());
-			System.out.println(transacaoPayload);
-			System.out.println("#########SAIDA#############");
-		}
-
 		saldoDao.atualizarSaldoFunction(transacaoPayload, clienteId,
 				new Transacao(saldo.getCliente(), valor,
 						TipoTransacao.valueOf(transacaoPayload.getTipo()), transacaoPayload.getDescricao()));
 
-		/**saldoDao.atualizarSaldo(saldo);
-
-		transacaoDao.salvarTransacao(new Transacao(saldo.getCliente(), valor,
-				TipoTransacao.valueOf(transacaoPayload.getTipo()), transacaoPayload.getDescricao()));*/
-		
-		
 		return new TransacaoResponse(saldo.getCliente().getLimite(), saldo.getValor());
 	}
 	
