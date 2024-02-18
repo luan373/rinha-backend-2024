@@ -4,13 +4,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class TransacaoPayload {
 
-	@JsonProperty(required = true)
 	private String valor;
 
-	@JsonProperty(required = true)
 	private String tipo;
 
-	@JsonProperty(required = true)
 	private String descricao;
 	
 	public TransacaoPayload() {

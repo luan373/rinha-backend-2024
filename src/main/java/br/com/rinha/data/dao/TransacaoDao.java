@@ -4,6 +4,8 @@ import br.com.rinha.data.config.HirakiCPDataSource;
 import br.com.rinha.data.model.TipoTransacao;
 import br.com.rinha.data.model.Transacao;
 import br.com.rinha.data.stored.ClienteStored;
+import br.com.rinha.rest.response.ExtratoResponse;
+import br.com.rinha.rest.response.SaldoResponse;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -23,22 +25,41 @@ public class TransacaoDao {
 			" ORDER BY t.realizada_em DESC LIMIT 10 " +
 			") q;";
 
+	public static final String BUSCAR_ULTIMAS_10_TRANSACOES_CORRECT = "SELECT t.id, t.cliente_id, t.valor, " +
+			"t.tipo, t.descricao, t.realizada_em FROM transacoes t " +
+			"where t.cliente_id = ? ORDER BY t.realizada_em DESC LIMIT 10";
+
+	private static final String BUSCAR_POR_CLIENTE_ID = "SELECT cliente_id, valor FROM saldos WHERE cliente_id = ?;";
+
 	public static final String SALVAR_TRANSACAO = "INSERT INTO transacoes (cliente_id, valor, tipo, descricao, realizada_em) "
 			+
 			"VALUES(?, ?, ?, ?, now());";
 
-	public List<Transacao> buscarUltimas10Transacoes(int idCliente) throws SQLException {
+	public ExtratoResponse buscarUltimas10Transacoes(int idCliente) throws SQLException {
 		Connection conn = null;
 		PreparedStatement stmt = null;
 		ResultSet rset = null;
 
+		SaldoResponse saldoResponse = null;
+
 		List<Transacao> list = new ArrayList<>();
 		try {
 			conn = HirakiCPDataSource.getConnection();
-			conn.setAutoCommit(false);
-			conn.beginRequest();
+			conn.setReadOnly(true);
 
-			stmt = conn.prepareStatement(BUSCAR_ULTIMAS_10_TRANSACOES);
+			stmt = conn.prepareStatement(BUSCAR_POR_CLIENTE_ID);
+			stmt.setInt(1, idCliente);
+
+			rset = stmt.executeQuery();
+			while (rset.next()) {
+				saldoResponse = new SaldoResponse(rset.getInt(2),
+						ClienteStored.clienteStored(
+								rset.getInt(1)).getLimite());
+			}
+
+
+
+			stmt = conn.prepareStatement(BUSCAR_ULTIMAS_10_TRANSACOES_CORRECT);
 			stmt.setInt(1, idCliente);
 
 			rset = stmt.executeQuery();
@@ -53,6 +74,8 @@ public class TransacaoDao {
 
 				list.add(t);
 			}
+
+
 
 		} catch (SQLException e) {
 			throw new SQLException(e); 
@@ -69,15 +92,13 @@ public class TransacaoDao {
 			}
 			try {
 				if (conn != null) {
-					conn.commit();
-					conn.endRequest();
 					conn.close();
 				}
 			} catch (Exception e) {
 			}
 		}
 
-		return list;
+		return new ExtratoResponse(saldoResponse ,list);
 	}
 
 	public void salvarTransacao(Transacao transacao) throws SQLException {

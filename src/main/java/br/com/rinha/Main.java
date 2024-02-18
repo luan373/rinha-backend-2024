@@ -26,7 +26,9 @@ public class Main {
         app.get("/clientes/{id}/extrato", ctx -> {
             var id = Integer.parseInt(ctx.pathParam("id"));
             if (id < 1 || id > 5) {
-                throw new NotFoundResponse();
+                ctx.status(404);
+                return;
+                //throw new NotFoundResponse();
             }
 
             ctx.json(transacaoService.gerarExtrato(Integer.parseInt(ctx.pathParam("id"))));
@@ -36,31 +38,41 @@ public class Main {
             try {
                 var id = Integer.parseInt(ctx.pathParam("id"));
                 if (id < 1 || id > 5) {
-                    throw new NotFoundResponse();
+                    ctx.status(404);
+                    return;
+                    //throw new NotFoundResponse();
                 }
 
-                var tp = ctx.bodyValidator(TransacaoPayload.class).get();
+                var tp = ctx.bodyAsClass(TransacaoPayload.class);
 
                 if(tp.getDescricao().isBlank() || tp.getDescricao().length() > 10) {
-                    throw new Exception();
+                    ctx.status(422);
+                    return;
+                    //throw new Exception();
                 }
 
                 if(tp.getTipo() == null || !(tp.getTipo().equals("c") || tp.getTipo().equals("d"))) {
-                    throw new Exception();
+                    ctx.status(422);
+                    return;
+                    //throw new Exception();
                 }
 
                 try {
-                    Integer.valueOf(tp.getValor());
+                    Integer.parseInt(tp.getValor());
                 } catch (NumberFormatException e) {
-                    throw new Exception();
+                    ctx.status(422);
+                    return;
+                    //throw new Exception();
                 }
 
                 ctx.json(transacaoService.insereTransacao(tp, Integer.parseInt(ctx.pathParam("id"))));
             }
             catch (NotFoundResponse e) {
-                throw new NotFoundResponse();
+                ctx.status(404);
+               // throw new NotFoundResponse();
             } catch (Exception e) {
-                throw new Exception();
+                ctx.status(422);
+                //throw new Exception();
             }
         });
 

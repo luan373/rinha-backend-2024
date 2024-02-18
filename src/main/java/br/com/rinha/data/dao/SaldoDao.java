@@ -15,185 +15,147 @@ import java.sql.SQLException;
 
 public class SaldoDao {
 
-	private static final String BUSCAR_POR_CLIENTE_ID = "SELECT q.id, q.cliente_id, q.valor, pg_advisory_xact_lock(q.id) FROM " +
-			"( " +
-			"  SELECT id, cliente_id, valor FROM saldos WHERE cliente_id = ? " +
-			") q ;";
+    private static final String BUSCAR_POR_CLIENTE_ID = "SELECT id, cliente_id, valor FROM saldos WHERE cliente_id = ?;";
 
-	private static final String BUSCAR_POR_CLIENTE_ID_CORRECT = "SELECT id, cliente_id, valor FROM saldos WHERE cliente_id = ? FOR UPDATE";
+    private static final String BUSCAR_POR_CLIENTE_ID_CORRECT = "SELECT id, cliente_id, valor FROM saldos WHERE cliente_id = ? FOR UPDATE";
 
-	private static final String ATUALIZAR_VALOR = "UPDATE saldos SET valor= ? WHERE cliente_id= ? ;";
+    private static final String BUSCAR_POR_CLIENTE_ID_OLD = "SELECT q.id, q.cliente_id, q.valor, pg_advisory_xact_lock(q.id) FROM " +
+            "( " +
+            "  SELECT id, cliente_id, valor FROM saldos WHERE cliente_id = ? " +
+            ") q ;";
 
-	public Saldo buscarSaldoPorClienteId(int idCliente) throws SQLException {
-		Connection conn = null;
-		PreparedStatement stmt = null;
-		ResultSet rset = null;
+    private static final String ATUALIZAR_VALOR = "UPDATE saldos SET valor= ? WHERE cliente_id= ? ;";
 
-		var c = new Saldo();
-		try {
-			conn = HirakiCPDataSource.getConnection();
-			conn.setAutoCommit(false);
-			conn.beginRequest();
+    public Saldo buscarSaldoPorClienteId(int idCliente) throws SQLException {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rset = null;
 
-			stmt = conn.prepareStatement(BUSCAR_POR_CLIENTE_ID);
-			stmt.setInt(1, idCliente);
+        var c = new Saldo();
+        try {
+            conn = HirakiCPDataSource.getConnection();
+            conn.setReadOnly(true);
 
-			rset = stmt.executeQuery();
-			while (rset.next()) {
-				c.setId(rset.getInt(1));
-				c.setCliente(ClienteStored.clienteStored(rset.getInt(2)));
-				c.setValor(rset.getInt(3));
-			}
+            stmt = conn.prepareStatement(BUSCAR_POR_CLIENTE_ID);
+            stmt.setInt(1, idCliente);
 
-			//stmt = conn.prepareStatement("SELECT pg_advisory_unlock(?);");
-			//stmt.setInt(1, idCliente);
-
-			//stmt.execute();
-		} catch (SQLException e) {
-			throw new SQLException(e); 
-		} finally {
-			try {
-				if (rset != null)
-					rset.close();
-			} catch (Exception e) {
-			}
-			try {
-				if (stmt != null)
-					stmt.close();
-			} catch (Exception e) {
-			}
-			try {
-				if (conn != null) {
-					conn.commit();
-					conn.endRequest();
-					conn.close();
-				}
-			} catch (Exception e) {
-			}
-		}
+            rset = stmt.executeQuery();
+            while (rset.next()) {
+                c.setId(rset.getInt(1));
+                c.setCliente(ClienteStored.clienteStored(rset.getInt(2)));
+                c.setValor(rset.getInt(3));
+            }
+        } catch (SQLException e) {
+            throw new SQLException(e);
+        } finally {
+            try {
+                if (rset != null)
+                    rset.close();
+            } catch (Exception e) {
+            }
+            try {
+                if (stmt != null)
+                    stmt.close();
+            } catch (Exception e) {
+            }
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (Exception e) {
+            }
+        }
 
 
+        return c;
+    }
 
-		return c;
-	}
+    public Saldo atualizarSaldoFunction(TransacaoPayload tp, int clienteId) throws SQLException, SaldoException {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rset = null;
 
-	public void atualizarSaldo(Saldo saldo) throws SQLException {
-		Connection conn = null;
-		PreparedStatement stmt = null;
+        var s = new Saldo();
+        try {
+            conn = HirakiCPDataSource.getConnection();
+            conn.setAutoCommit(false);
+            conn.beginRequest();
+            conn.setAutoCommit(false);
+            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
-		try {
-			conn = HirakiCPDataSource.getConnection();
-			conn.setAutoCommit(false);
-			conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-			conn.beginRequest();
+            stmt = conn.prepareStatement(BUSCAR_POR_CLIENTE_ID_CORRECT);
+            stmt.setInt(1, clienteId);
 
-			stmt = conn.prepareStatement(ATUALIZAR_VALOR);
-			stmt.setInt(1, saldo.getValor());
-			stmt.setInt(2, saldo.getCliente().getId());
+            rset = stmt.executeQuery();
+            while (rset.next()) {
+                s.setId(rset.getInt(1));
+                s.setCliente(ClienteStored.clienteStored(rset.getInt(2)));
+                s.setValor(rset.getInt(3));
+            }
 
-			stmt.executeUpdate();
-		} catch (SQLException e) {
-			throw new SQLException(e);
-		} finally {
-			try {
-				if (stmt != null)
-					stmt.close();
-			} catch (Exception e) {
-			}
-			try {
-				if (conn != null) {
-					conn.commit();
-					conn.endRequest();
-					conn.close();
-				}
-			} catch (Exception e) {
-			}
-		}
-	}
+            int valor = Integer.parseInt(tp.getValor());
 
-	public void atualizarSaldoFunction(TransacaoPayload tp, int clienteId, Transacao t) throws SQLException, SaldoException {
-		Connection conn = null;
-		PreparedStatement stmt = null;
-		ResultSet rset = null;
+            switch (TipoTransacao.valueOf(tp.getTipo())) {
+                case c: {
+                    s.setValor(creditaValor(s.getValor(), valor));
+                    break;
+                }
+                case d: {
+                    s.setValor(debitaValor(s.getValor(), valor, s.getCliente().getLimite()));
+                    break;
+                }
+                default:
+                    throw new IllegalArgumentException("Unexpected value: " + tp.getTipo());
+            }
 
-		try {
-			conn = HirakiCPDataSource.getConnection();
-			conn.beginRequest();
-			conn.setAutoCommit(false);
-			conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+            stmt = conn.prepareStatement("select creditar(?, ?, ?, ?, ?)");
+            stmt.setInt(1, s.getCliente().getId());
+            stmt.setInt(2, valor);
+            stmt.setInt(3, s.getValor());
+            stmt.setString(4, tp.getTipo());
+            stmt.setString(5, tp.getDescricao());
 
-			stmt = conn.prepareStatement(BUSCAR_POR_CLIENTE_ID_CORRECT);
-			stmt.setInt(1, clienteId);
+            stmt.execute();
+        } catch (SQLException e) {
+            throw new SQLException(e);
+        } catch (SaldoException e) {
+            throw new SaldoException();
+        } finally {
+            try {
+                if (rset != null)
+                    rset.close();
+            } catch (Exception e) {
+            }
+            try {
+                if (stmt != null)
+                    stmt.close();
+            } catch (Exception e) {
+            }
+            try {
+                if (conn != null) {
+                    conn.commit();
+                    conn.endRequest();
+                    conn.close();
+                }
+            } catch (Exception e) {
+            }
+        }
 
-			var s = new Saldo();
-			rset = stmt.executeQuery();
-			while (rset.next()) {
-				s.setId(rset.getInt(1));
-				s.setCliente(ClienteStored.clienteStored(rset.getInt(2)));
-				s.setValor(rset.getInt(3));
-			}
+        return s;
+    }
 
-			int valor = Integer.parseInt(tp.getValor());
+    private int creditaValor(int valorSaldo, int valorTransacao) {
+        return valorSaldo + valorTransacao;
+    }
 
-			switch (TipoTransacao.valueOf(tp.getTipo())){
-				case c: {
-					s.setValor(creditaValor(s.getValor(), valor));
-					break;
-				}
-				case d: {
-					s.setValor(debitaValor(s.getValor(), valor, s.getCliente().getLimite()));
-					break;
-				}
-				default:
-					throw new IllegalArgumentException("Unexpected value: " + tp.getTipo());
-			}
+    private int debitaValor(int valorSaldo, int valorTransacao, int limite) throws SaldoException {
+        int total = valorSaldo - valorTransacao;
 
-			stmt = conn.prepareStatement("select creditar(?, ?, ?, ?, ?)");
-			stmt.setInt(1, s.getCliente().getId());
-			stmt.setInt(2, t.getValor());
-			stmt.setInt(3, s.getValor());
-			stmt.setString(4, t.getTipo().name());
-			stmt.setString(5, t.getDescricao());
+        if ((-limite) > total) {
+            throw new SaldoException();
+        }
 
-			stmt.execute();
-		} catch (SQLException e) {
-			throw new SQLException(e);
-		} catch (SaldoException e) {
-			throw new SaldoException();
-		}finally {
-			try {
-				if (rset != null)
-					rset.close();
-			} catch (Exception e) {
-			}
-			try {
-				if (stmt != null)
-					stmt.close();
-			} catch (Exception e) {
-			}
-			try {
-				if (conn != null) {
-					conn.commit();
-					conn.endRequest();
-					conn.close();
-				}
-			} catch (Exception e) {
-			}
-		}
-	}
-
-	private int creditaValor(int valorSaldo, int valorTransacao) {
-		return valorSaldo + valorTransacao;
-	}
-
-	private int debitaValor(int valorSaldo, int valorTransacao, int limite) throws SaldoException {
-		int total = valorSaldo - valorTransacao;
-
-		if((-limite) > total) {
-			throw new SaldoException();
-		}
-
-		return total;
-	}
+        return total;
+    }
 
 }

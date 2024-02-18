@@ -1,9 +1,14 @@
 package br.com.rinha.rest.service;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
+import br.com.rinha.data.config.HirakiCPDataSource;
 import br.com.rinha.data.dao.SaldoDao;
 import br.com.rinha.data.dao.TransacaoDao;
 import br.com.rinha.rest.exceptions.SaldoException;
@@ -24,37 +29,13 @@ public class TransacaoService {
 	public static int count = 1;
 	
 	public TransacaoResponse insereTransacao(TransacaoPayload transacaoPayload, int clienteId) throws SQLException, SaldoException {
-		Saldo saldo = saldoDao.buscarSaldoPorClienteId(clienteId);
-
-		int valor = Integer.parseInt(transacaoPayload.getValor());
-		
-		switch (TipoTransacao.valueOf(transacaoPayload.getTipo())){
-			case c: {
-				saldo.setValor(creditaValor(saldo.getValor(), valor));
-				break;
-			}
-			case d: {
-                    saldo.setValor(debitaValor(saldo.getValor(), valor, saldo.getCliente().getLimite()));
-                break;
-			}
-			default:
-				throw new IllegalArgumentException("Unexpected value: " + transacaoPayload.getTipo());
-		}
-
-		saldoDao.atualizarSaldoFunction(transacaoPayload, clienteId,
-				new Transacao(saldo.getCliente(), valor,
-						TipoTransacao.valueOf(transacaoPayload.getTipo()), transacaoPayload.getDescricao()));
+		Saldo saldo = saldoDao.atualizarSaldoFunction(transacaoPayload, clienteId);
 
 		return new TransacaoResponse(saldo.getCliente().getLimite(), saldo.getValor());
 	}
 	
 	public ExtratoResponse gerarExtrato(int clienteId) throws SQLException {
-		Saldo saldo = saldoDao.buscarSaldoPorClienteId(clienteId);
-
-		List<Transacao> list = transacaoDao.buscarUltimas10Transacoes(clienteId);
-		
-		return new ExtratoResponse(new SaldoResponse(saldo.getValor(), saldo.getCliente().getLimite()), 
-				list);
+		return transacaoDao.buscarUltimas10Transacoes(clienteId);
 	}
 	
 	private int creditaValor(int valorSaldo, int valorTransacao) {

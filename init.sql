@@ -58,7 +58,7 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 AS $$
 BEGIN
-	PERFORM pg_advisory_xact_lock(cliente_id_tx);
+	--PERFORM pg_advisory_xact_lock(cliente_id_tx);
 
 	INSERT INTO transacoes
 		VALUES(DEFAULT, cliente_id_tx, valor_tx, tipo_tx, descricao_tx, NOW());
