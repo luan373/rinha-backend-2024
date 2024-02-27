@@ -2,7 +2,7 @@ version: "3.5"
 
 services:
   api01: &api
-    image: rinha-javalin:latest
+    image: luan-javalin:latest
     hostname: api01
     environment:
       - RINHA_PORT=3000
@@ -13,7 +13,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.45"
+          cpus: "0.60"
           memory: "180MB"
 
   api02:
@@ -34,7 +34,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.15"
+          cpus: "0.30"
           memory: "10MB"
 
   db:
@@ -52,7 +52,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.45"
+          cpus: "0.75"
           memory: "180MB"
 
 networks:

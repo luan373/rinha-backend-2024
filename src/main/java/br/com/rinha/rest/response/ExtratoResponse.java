@@ -1,14 +1,15 @@
 package br.com.rinha.rest.response;
 
+import java.io.Serializable;
 import java.util.List;
 
 import br.com.rinha.data.model.Transacao;
 
-public class ExtratoResponse {
+public class ExtratoResponse implements Serializable {
 
-	private SaldoResponse saldo;
+	private final SaldoResponse saldo;
 
-	private List<Transacao> ultimas_transacoes;
+	private final List<Transacao> ultimas_transacoes;
 
 	public ExtratoResponse(SaldoResponse saldo, List<Transacao> ultimas_transacoes) {
 		super();
@@ -16,24 +17,19 @@ public class ExtratoResponse {
 		this.ultimas_transacoes = ultimas_transacoes;
 	}
 
-	public ExtratoResponse() {
-		super();
-	}
-
 	public SaldoResponse getSaldo() {
 		return saldo;
-	}
-
-	public void setSaldo(SaldoResponse saldo) {
-		this.saldo = saldo;
 	}
 
 	public List<Transacao> getUltimas_transacoes() {
 		return ultimas_transacoes;
 	}
 
-	public void setUltimas_transacoes(List<Transacao> ultimas_transacoes) {
-		this.ultimas_transacoes = ultimas_transacoes;
+	@Override
+	public String toString() {
+		return "ExtratoResponse{" +
+				"saldo=" + saldo +
+				", ultimas_transacoes=" + ultimas_transacoes +
+				'}';
 	}
-
 }

@@ -1,16 +1,9 @@
 package br.com.rinha;
 
-import br.com.rinha.data.config.HirakiCPDataSource;
 import br.com.rinha.rest.payload.TransacaoPayload;
 import br.com.rinha.rest.service.TransacaoService;
 import io.javalin.Javalin;
 import io.javalin.http.NotFoundResponse;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.time.LocalDateTime;
-
-import static io.javalin.apibuilder.ApiBuilder.get;
 
 public class Main {
 
@@ -28,10 +21,14 @@ public class Main {
             if (id < 1 || id > 5) {
                 ctx.status(404);
                 return;
-                //throw new NotFoundResponse();
             }
 
-            ctx.json(transacaoService.gerarExtrato(Integer.parseInt(ctx.pathParam("id"))));
+            ctx.future(() -> transacaoService.gerarExtratatoAsyncCall(Integer.parseInt(ctx.pathParam("id")))
+                    .thenAccept(response -> ctx.json(response).status(200))
+                    .exceptionally(throwable -> {
+                        ctx.status(422);
+                        return null;
+                    }));
         });
 
         app.post("/clientes/{id}/transacoes", ctx -> {
@@ -48,13 +45,11 @@ public class Main {
                 if(tp.getDescricao().isBlank() || tp.getDescricao().length() > 10) {
                     ctx.status(422);
                     return;
-                    //throw new Exception();
                 }
 
                 if(tp.getTipo() == null || !(tp.getTipo().equals("c") || tp.getTipo().equals("d"))) {
                     ctx.status(422);
                     return;
-                    //throw new Exception();
                 }
 
                 try {
@@ -62,17 +57,19 @@ public class Main {
                 } catch (NumberFormatException e) {
                     ctx.status(422);
                     return;
-                    //throw new Exception();
                 }
 
-                ctx.json(transacaoService.insereTransacao(tp, Integer.parseInt(ctx.pathParam("id"))));
+                ctx.future(() -> transacaoService.insereTransacaoAsyncCall(tp, Integer.parseInt(ctx.pathParam("id")))
+                        .thenAccept(response -> ctx.json(response).status(200))
+                        .exceptionally(throwable -> {
+                            ctx.status(422);
+                            return null;
+                        }));
             }
             catch (NotFoundResponse e) {
                 ctx.status(404);
-               // throw new NotFoundResponse();
             } catch (Exception e) {
                 ctx.status(422);
-                //throw new Exception();
             }
         });
 
@@ -81,8 +78,6 @@ public class Main {
         });
 
         app.exception(Exception.class, (e, ctx) -> {
-            System.err.println(e.getMessage());
-            ctx.result(e.getMessage());
             ctx.status(422);
         });
     }

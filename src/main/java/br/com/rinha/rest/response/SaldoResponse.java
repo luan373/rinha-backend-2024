@@ -10,9 +10,9 @@ public class SaldoResponse {
 
 	@JsonFormat(shape = JsonFormat.Shape.STRING)
 	private LocalDateTime data_extrato = LocalDateTime.now();
-	
+
 	private int limite;
-	
+
 	public SaldoResponse(int total, int limite) {
 		super();
 		this.total = total;
@@ -31,7 +31,7 @@ public class SaldoResponse {
 		return data_extrato;
 	}
 
-	public void setData_extrato(LocalDateTime	 data_extrato) {
+	public void setData_extrato(LocalDateTime data_extrato) {
 		this.data_extrato = data_extrato;
 	}
 
@@ -42,6 +42,13 @@ public class SaldoResponse {
 	public void setLimite(int limite) {
 		this.limite = limite;
 	}
-	
-	
+
+	@Override
+	public String toString() {
+		return "SaldoResponse{" +
+				"total=" + total +
+				", data_extrato=" + data_extrato +
+				", limite=" + limite +
+				'}';
+	}
 }

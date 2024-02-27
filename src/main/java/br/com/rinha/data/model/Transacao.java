@@ -81,4 +81,17 @@ public class Transacao {
 	public void setRealizadaEm(LocalDateTime realizadaEm) {
 		this.realizadaEm = realizadaEm;
 	}
+
+	@Override
+	public String toString() {
+		return "Transacao{" +
+				"id=" + id +
+				", cliente=" + cliente +
+				", valor=" + valor +
+				", tipo=" + tipo +
+				", descricao='" + descricao + '\'' +
+				", realizadaEm=" + realizadaEm +
+				'}';
+	}
+
 }

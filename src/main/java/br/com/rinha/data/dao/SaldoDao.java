@@ -19,57 +19,6 @@ public class SaldoDao {
 
     private static final String BUSCAR_POR_CLIENTE_ID_CORRECT = "SELECT id, cliente_id, valor FROM saldos WHERE cliente_id = ? FOR UPDATE";
 
-    private static final String BUSCAR_POR_CLIENTE_ID_OLD = "SELECT q.id, q.cliente_id, q.valor, pg_advisory_xact_lock(q.id) FROM " +
-            "( " +
-            "  SELECT id, cliente_id, valor FROM saldos WHERE cliente_id = ? " +
-            ") q ;";
-
-    private static final String ATUALIZAR_VALOR = "UPDATE saldos SET valor= ? WHERE cliente_id= ? ;";
-
-    public Saldo buscarSaldoPorClienteId(int idCliente) throws SQLException {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rset = null;
-
-        var c = new Saldo();
-        try {
-            conn = HirakiCPDataSource.getConnection();
-            conn.setReadOnly(true);
-
-            stmt = conn.prepareStatement(BUSCAR_POR_CLIENTE_ID);
-            stmt.setInt(1, idCliente);
-
-            rset = stmt.executeQuery();
-            while (rset.next()) {
-                c.setId(rset.getInt(1));
-                c.setCliente(ClienteStored.clienteStored(rset.getInt(2)));
-                c.setValor(rset.getInt(3));
-            }
-        } catch (SQLException e) {
-            throw new SQLException(e);
-        } finally {
-            try {
-                if (rset != null)
-                    rset.close();
-            } catch (Exception e) {
-            }
-            try {
-                if (stmt != null)
-                    stmt.close();
-            } catch (Exception e) {
-            }
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (Exception e) {
-            }
-        }
-
-
-        return c;
-    }
-
     public Saldo atualizarSaldoFunction(TransacaoPayload tp, int clienteId) throws SQLException, SaldoException {
         Connection conn = null;
         PreparedStatement stmt = null;
